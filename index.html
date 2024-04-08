@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pong Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #333;
+      color: #fff;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    #startContainer {
+      text-align: center;
+    }
+
+    #startContainer h1 {
+      font-size: 36px;
+      margin-bottom: 20px;
+    }
+
+    #nameInput {
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ddd;
+      margin-bottom: 10px;
+      width: 250px;
+      font-size: 16px;
+    }
+
+    #startButton {
+      padding: 10px 20px;
+      border: none;
+      background-color: #4CAF50;
+      color: #fff;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    #startButton:hover {
+      background-color: #45a049;
+    }
+
+    /* Additional CSS for touch controls */
+    #touchControls {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      justify-content: center;
+    }
+
+    #touchControls button {
+      padding: 10px 20px;
+      margin: 0 5px;
+      border: none;
+      background-color: #4CAF50;
+      color: #fff;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    #touchControls button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <div id="startContainer">
+    <h1>Welcome to Pong Game</h1>
+    <label for="name">Enter your name:</label><br>
+    <input type="text" id="nameInput" name="name"><br>
+    <button id="startButton" onclick="startGame()">Start Game</button>
+  </div>
+
+  <!-- Touch controls for mobile -->
+  <div id="touchControls">
+    <button id="upButton">Up</button>
+    <button id="downButton">Down</button>
+  </div>
+
+  <canvas id="canvas" width="640" height="480" style="display: none;"></canvas>
+
+  <script>
+    // Variables to store canvas and context
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    // Constants for bat and ball properties
+    const batWidth = 10;
+    const batHeight = 60;
+    const ballRadius = 5;
+
+    // Variables to store game state
+    let playerScore = 0;
+    let computerScore = 0;
+    let playerName = ""; // Variable to store player's name
+    let playerY = canvas.height / 2 - batHeight / 2;
+    let computerY = canvas.height / 2 - batHeight / 2;
+    let ballX = canvas.width / 2;
+    let ballY = canvas.height / 2;
+    let ballSpeedX = -3;
+    let ballSpeedY = 3;
+
+    // Function to start the game
+    function startGame() {
+      playerName = document.getElementById("nameInput").value;
+      if (!playerName.trim()) {
+        alert("Please enter your name.");
+        return;
+      }
+      
+      // Hide start container
+      document.getElementById("startContainer").style.display = "none";
+      
+      // Display canvas
+      document.getElementById("canvas").style.display = "block";
+      
+      // Call the draw function to start the game
+      draw();
+    }
+
+    // Function to draw the bats and ball
+    function draw() {
+      // Clear canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw bats
+      ctx.fillStyle = "white";
+      ctx.fillRect(10, playerY, batWidth, batHeight);
+      ctx.fillRect(canvas.width - batWidth - 10, computerY, batWidth, batHeight);
+
+      // Draw ball
+      ctx.beginPath();
+      ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Draw player's name and score
+      ctx.font = "20px Arial";
+      ctx.fillText(playerName + " score: " + playerScore, 20, 30);
+
+      // Draw computer's name and score
+      ctx.fillText("Pingy score: " + computerScore, canvas.width - 160, 30);
+
+      // Move ball
+      ballX += ballSpeedX;
+      ballY += ballSpeedY;
+
+      // Ball collision with top and bottom walls
+      if (ballY + ballRadius > canvas.height || ballY - ballRadius < 0) {
+        ballSpeedY = -ballSpeedY;
+      }
+
+      // Ball collision with bats
+      if (
+        (ballX - ballRadius <= batWidth + 10 && ballY >= playerY && ballY <= playerY + batHeight) ||
+        (ballX + ballRadius >= canvas.width - batWidth - 10 && ballY >= computerY && ballY <= computerY + batHeight)
+      ) {
+        ballSpeedX = -ballSpeedX;
+      }
+
+      // Computer bat movement
+      if (ballY < computerY + batHeight / 2) {
+        computerY -= 5;
+      } else {
+        computerY += 5;
+      }
+
+      // Check for point scored
+      if (ballX - ballRadius <= 0) {
+        computerScore++;
+        reset();
+      } else if (ballX + ballRadius >= canvas.width) {
+        playerScore++;
+        reset();
+      }
+
+      // Redraw
+      requestAnimationFrame(draw);
+    }
+
+    // Function to reset the ball position
+    function reset() {
+      ballX = canvas.width / 2;
+      ballY = canvas.height / 2;
+    }
+
+    // Event listeners for touch controls
+    document.getElementById("upButton").addEventListener("touchstart", function(event) {
+      event.preventDefault(); // Prevent scrolling
+      playerY -= 10;
+    });
+
+    document.getElementById("downButton").addEventListener("touchstart", function(event) {
+      event.preventDefault(); // Prevent scrolling
+      playerY += 10;
+    });
+
+    // Event listeners for player bat movement
+    document.addEventListener("keydown", function(event) {
+      console.log("Key pressed:", event.code); // Debugging statement
+      if (event.code === "ArrowUp" && playerY > 0) {
+        playerY -= 10;
+      } else if (event.code === "ArrowDown" && playerY + batHeight < canvas.height) {
+        playerY += 10;
+      }
+    });
+    // Function to move the player's bat up
+function moveUp() {
+  playerY -= 10;
+}
+
+// Function to move the player's bat down
+function moveDown() {
+  playerY += 10;
+}
+
+// Event listeners for touch controls
+document.getElementById("upButton").addEventListener("touchstart", function(event) {
+  event.preventDefault(); // Prevent scrolling
+  moveUp();
+});
+
+document.getElementById("downButton").addEventListener("touchstart", function(event) {
+  event.preventDefault(); // Prevent scrolling
+  moveDown();
+});
+
+// Event listeners for mouse controls
+document.getElementById("upButton").addEventListener("click", moveUp);
+document.getElementById("downButton").addEventListener("click", moveDown);
+
+  </script>
+</body>
+</html>
